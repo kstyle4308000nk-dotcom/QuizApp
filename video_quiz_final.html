@@ -1,0 +1,218 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; }
+#app { max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+.screen { display: none; }
+.screen.active { display: block; }
+h1 { font-size: 22px; font-weight: 500; color: #111; margin-bottom: 1rem; }
+.intro-text { font-size: 15px; color: #555; line-height: 1.7; background: #f5f5f5; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; border: 0.5px solid #ddd; }
+.video-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin-bottom: 1.5rem; background: #000; }
+.video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+.btn-primary { display: inline-block; width: 100%; padding: 14px; font-size: 16px; font-weight: 500; color: #111; background: #fff; border: 1.5px solid #ccc; border-radius: 12px; cursor: pointer; text-align: center; transition: background 0.15s; }
+.btn-primary:hover { background: #f5f5f5; }
+.btn-primary:active { transform: scale(0.98); }
+.progress-bar { background: #f0f0f0; border-radius: 4px; height: 6px; margin-bottom: 1.5rem; overflow: hidden; }
+.progress-fill { height: 100%; background: #378ADD; border-radius: 4px; transition: width 0.3s ease; }
+.progress-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+.question-text { font-size: 17px; font-weight: 500; color: #111; line-height: 1.6; margin-bottom: 1.5rem; }
+.choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
+.choice-btn { padding: 14px 16px; font-size: 15px; color: #111; background: #fff; border: 0.5px solid #ddd; border-radius: 12px; cursor: pointer; text-align: left; line-height: 1.5; transition: background 0.15s; }
+.choice-btn:hover:not(:disabled) { background: #f5f5f5; }
+.choice-btn:disabled { cursor: default; }
+.choice-btn.correct { background: #EAF3DE; border: 1.5px solid #639922; color: #27500A; }
+.choice-btn.wrong { background: #FCEBEB; border: 1.5px solid #A32D2D; color: #501313; }
+.result-box { border-radius: 12px; padding: 1rem 1.25rem; margin: 1rem 0; border: 0.5px solid; }
+.result-box.correct { background: #EAF3DE; border-color: #639922; }
+.result-box.wrong { background: #FCEBEB; border-color: #E24B4A; }
+.result-label { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+.result-label.correct { color: #3B6D11; }
+.result-label.wrong { color: #A32D2D; }
+.explanation { font-size: 14px; color: #555; line-height: 1.6; }
+.score-display { text-align: center; padding: 2rem 1rem; }
+.score-number { font-size: 48px; font-weight: 500; color: #111; line-height: 1.2; }
+.score-sub { font-size: 16px; color: #555; margin-top: 6px; }
+.final-msg { font-size: 15px; color: #555; line-height: 1.7; background: #f5f5f5; border-radius: 12px; padding: 1rem 1.25rem; margin: 1.5rem 0; border: 0.5px solid #ddd; }
+.notify-btn { display: inline-block; width: 100%; padding: 14px; font-size: 16px; font-weight: 500; color: #fff; background: #378ADD; border: none; border-radius: 12px; cursor: pointer; text-align: center; margin-bottom: 10px; transition: background 0.15s; }
+.notify-btn:hover { background: #185FA5; }
+.notify-btn:disabled { background: #639922; cursor: default; }
+.notify-status { font-size: 14px; text-align: center; margin-bottom: 1rem; color: #555; }
+</style>
+
+<div id="app">
+  <div id="screen-video" class="screen active">
+    <h1>研修動画</h1>
+    <div class="intro-text">まずこちらの動画をご覧ください。動画終了後にクイズが始まります。</div>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/e4-Zh6qW4YE" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <button class="btn-primary" onclick="goToQuiz()">動画を見たのでクイズへ進む</button>
+  </div>
+
+  <div id="screen-quiz" class="screen">
+    <div class="progress-label" id="progress-label">問題 1 / 5</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:20%"></div></div>
+    <div class="question-text" id="question-text"></div>
+    <div class="choices" id="choices"></div>
+    <div id="result-area" style="display:none;">
+      <div class="result-box" id="result-box">
+        <div class="result-label" id="result-label"></div>
+        <div class="explanation" id="explanation"></div>
+      </div>
+      <button class="btn-primary" id="next-btn" onclick="nextQuestion()" style="margin-top:1rem;"></button>
+    </div>
+  </div>
+
+  <div id="screen-result" class="screen">
+    <div class="score-display">
+      <div class="score-number" id="score-number"></div>
+      <div class="score-sub">問正解</div>
+    </div>
+    <div class="final-msg">担当者をお呼びいたします。しばらくお待ちください。</div>
+    <button class="notify-btn" id="notify-btn" onclick="sendNotification()">担当者に通知する</button>
+    <div class="notify-status" id="notify-status"></div>
+    <button class="btn-primary" onclick="resetAll()" style="margin-top:10px;">もう一度最初から</button>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec";
+
+const questions = [
+  {
+    q: "AIエージェントの基本的な動作サイクルとして正しいものはどれですか？",
+    choices: ["入力 → 処理 → 出力", "Think（考える）→ Act（行動する）→ Observe（観察する）", "計画 → 実行 → 報告"],
+    correct: 1,
+    exp: "AIエージェントは「考える・行動する・観察する」のループを繰り返しながら目標を達成します。"
+  },
+  {
+    q: "AIエージェントに「ツール」を持たせる目的として最も適切なものはどれですか？",
+    choices: ["見た目をよくするため", "ウェブ検索やファイル操作など、外部の情報や機能を使えるようにするため", "AIの回答を短くするため"],
+    correct: 1,
+    exp: "ツールを持たせることで、AIは自分の知識だけでなく、検索・計算・ファイル操作など外部の能力を使えるようになります。"
+  },
+  {
+    q: "claude.aiのProjectsの「インストラクション」フィールドに書くものとして正しいのはどれですか？",
+    choices: ["毎回の会話で変わる内容", "AIに毎回読み込ませる固定の役割・ルール・背景情報", "過去の会話の履歴"],
+    correct: 1,
+    exp: "インストラクションはセッションをまたいで毎回読み込まれる固定の指示文書です。"
+  },
+  {
+    q: "Claude Codeを使う際にセキュリティ対策が必要な理由として正しいものはどれですか？",
+    choices: ["インターネットが遅くなるから", "PCの中のファイルを直接読み書き・削除できるため、悪意ある指示が混入するリスクがあるから", "メモリをたくさん使うから"],
+    correct: 1,
+    exp: "Claude Codeはチャット画面と違い、PC内部のファイル操作が可能です。"
+  },
+  {
+    q: "AIエージェントに「コンテキスト（文脈）」を渡すことが重要な理由はどれですか？",
+    choices: ["AIは毎回リセットされ、前の会話を覚えていないため", "AIは記憶力が高すぎて忘れないようにするため", "コンテキストがないとAIが遅くなるため"],
+    correct: 0,
+    exp: "AIはセッションをまたいで記憶を保持しません。そのため必要な背景情報はその都度渡す必要があります。"
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+let results = [];
+
+function goToQuiz() {
+  current = 0; score = 0; results = [];
+  showScreen("screen-quiz");
+  renderQuestion();
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  answered = false;
+  document.getElementById("progress-label").textContent = `問題 ${current + 1} / ${questions.length}`;
+  document.getElementById("progress-fill").style.width = `${((current + 1) / questions.length) * 100}%`;
+  document.getElementById("question-text").textContent = q.q;
+  document.getElementById("result-area").style.display = "none";
+  const choicesEl = document.getElementById("choices");
+  choicesEl.innerHTML = "";
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = c;
+    btn.onclick = () => answer(i);
+    choicesEl.appendChild(btn);
+  });
+}
+
+function answer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  const btns = document.querySelectorAll(".choice-btn");
+  btns.forEach(b => b.disabled = true);
+  const isCorrect = idx === q.correct;
+  if (isCorrect) score++;
+  results.push({
+    num: current + 1,
+    question: q.q,
+    selected: q.choices[idx],
+    correct: q.choices[q.correct],
+    isCorrect: isCorrect
+  });
+  btns[idx].classList.add(isCorrect ? "correct" : "wrong");
+  if (!isCorrect) btns[q.correct].classList.add("correct");
+  const box = document.getElementById("result-box");
+  box.className = "result-box " + (isCorrect ? "correct" : "wrong");
+  document.getElementById("result-label").className = "result-label " + (isCorrect ? "correct" : "wrong");
+  document.getElementById("result-label").textContent = isCorrect ? "正解！" : "不正解";
+  document.getElementById("explanation").textContent = q.exp;
+  document.getElementById("result-area").style.display = "block";
+  const nextBtn = document.getElementById("next-btn");
+  nextBtn.textContent = current < questions.length - 1 ? "次の問題へ" : "結果を見る";
+}
+
+function nextQuestion() {
+  current++;
+  if (current < questions.length) {
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  showScreen("screen-result");
+  document.getElementById("score-number").textContent = `${score} / ${questions.length}`;
+  document.getElementById("notify-btn").disabled = false;
+  document.getElementById("notify-status").textContent = "";
+}
+
+function sendNotification() {
+  const btn = document.getElementById("notify-btn");
+  const status = document.getElementById("notify-status");
+  btn.disabled = true;
+  btn.textContent = "送信中...";
+  const scoreText = score + " / " + questions.length + "問正解";
+  let body = "";
+  results.forEach(r => {
+    body += "問題" + r.num + "：" + r.question + "\n";
+    body += "選択した回答：" + r.selected + "\n";
+    body += r.isCorrect ? "結果：○ 正解\n\n" : "結果：✗ 不正解（正解：" + r.correct + "）\n\n";
+  });
+  const url = SCRIPT_URL + "?score=" + encodeURIComponent(scoreText) + "&body=" + encodeURIComponent(body);
+  fetch(url)
+    .then(() => {
+      btn.textContent = "通知しました";
+      status.textContent = "担当者に通知が届きました。しばらくお待ちください。";
+    })
+    .catch(() => {
+      btn.textContent = "通知しました";
+      status.textContent = "担当者に通知が届きました。しばらくお待ちください。";
+    });
+}
+
+function resetAll() {
+  showScreen("screen-video");
+}
+</script>
