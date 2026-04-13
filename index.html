@@ -76,7 +76,7 @@ h1 { font-size: 22px; font-weight: 500; color: #111; margin-bottom: 1rem; }
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec";
+const "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec" = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec";
 
 const questions = [
   {
@@ -200,7 +200,7 @@ function sendNotification() {
     body += "選択した回答：" + r.selected + "\n";
     body += r.isCorrect ? "結果：○ 正解\n\n" : "結果：✗ 不正解（正解：" + r.correct + "）\n\n";
   });
-  const url = SCRIPT_URL + "?score=" + encodeURIComponent(scoreText) + "&body=" + encodeURIComponent(body);
+  const url = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec" + "?score=" + encodeURIComponent(scoreText) + "&body=" + encodeURIComponent(body);
   fetch(url)
     .then(() => {
       btn.textContent = "通知しました";
