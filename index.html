@@ -1,4 +1,3 @@
-
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: sans-serif; }
@@ -42,11 +41,11 @@ h1 { font-size: 22px; font-weight: 500; color: #111; margin-bottom: 1rem; }
 <div id="app">
   <div id="screen-video" class="screen active">
     <h1>研修動画</h1>
-    <div class="intro-text">まずこちらの動画をご覧ください。動画終了後にクイズが始まります。</div>
+    <div class="intro-text">まずこちらの動画をご覧ください。動画終了後に確認テストが始まります。</div>
     <div class="video-wrap">
       <iframe src="https://drive.google.com/file/d/1T1s-zt0i9k0HkZ6qsQ3KjHAFyH4ISCBE/preview" allow="autoplay" allowfullscreen></iframe>
     </div>
-    <button class="btn-primary" onclick="goToQuiz()">動画を見たのでクイズへ進む</button>
+    <button class="btn-primary" onclick="goToQuiz()">動画を見たので確認テストへ進む</button>
   </div>
 
   <div id="screen-quiz" class="screen">
@@ -71,12 +70,11 @@ h1 { font-size: 22px; font-weight: 500; color: #111; margin-bottom: 1rem; }
     <div class="final-msg">担当者をお呼びいたします。しばらくお待ちください。</div>
     <button class="notify-btn" id="notify-btn" onclick="sendNotification()">担当者に通知する</button>
     <div class="notify-status" id="notify-status"></div>
-    <button class="btn-primary" onclick="resetAll()" style="margin-top:10px;">もう一度最初から</button>
   </div>
 </div>
 
 <script>
-const "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec" = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec";
 
 const questions = [
   {
@@ -200,7 +198,8 @@ function sendNotification() {
     body += "選択した回答：" + r.selected + "\n";
     body += r.isCorrect ? "結果：○ 正解\n\n" : "結果：✗ 不正解（正解：" + r.correct + "）\n\n";
   });
-  const url = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec" + "?score=" + encodeURIComponent(scoreText) + "&body=" + encodeURIComponent(body);
+  const answers = results.map(r => r.isCorrect ? "○" : "✗").join(",");
+  const url = SCRIPT_URL + "?score=" + encodeURIComponent(scoreText) + "&body=" + encodeURIComponent(body) + "&answers=" + encodeURIComponent(answers);
   fetch(url)
     .then(() => {
       btn.textContent = "通知しました";
