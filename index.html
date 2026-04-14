@@ -36,6 +36,7 @@ h1 { font-size: 22px; font-weight: 500; color: #111; margin-bottom: 1rem; }
 .notify-btn:hover { background: #185FA5; }
 .notify-btn:disabled { background: #639922; cursor: default; }
 .notify-status { font-size: 14px; text-align: center; margin-bottom: 1rem; color: #555; }
+.loading { text-align: center; padding: 3rem 1rem; font-size: 15px; color: #888; }
 </style>
 
 <div id="app">
@@ -49,16 +50,19 @@ h1 { font-size: 22px; font-weight: 500; color: #111; margin-bottom: 1rem; }
   </div>
 
   <div id="screen-quiz" class="screen">
-    <div class="progress-label" id="progress-label">問題 1 / 5</div>
-    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:20%"></div></div>
-    <div class="question-text" id="question-text"></div>
-    <div class="choices" id="choices"></div>
-    <div id="result-area" style="display:none;">
-      <div class="result-box" id="result-box">
-        <div class="result-label" id="result-label"></div>
-        <div class="explanation" id="explanation"></div>
+    <div id="loading-area" class="loading">問題を読み込み中...</div>
+    <div id="quiz-content" style="display:none;">
+      <div class="progress-label" id="progress-label">問題 1 / 5</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:20%"></div></div>
+      <div class="question-text" id="question-text"></div>
+      <div class="choices" id="choices"></div>
+      <div id="result-area" style="display:none;">
+        <div class="result-box" id="result-box">
+          <div class="result-label" id="result-label"></div>
+          <div class="explanation" id="explanation"></div>
+        </div>
+        <button class="btn-primary" id="next-btn" onclick="nextQuestion()" style="margin-top:1rem;"></button>
       </div>
-      <button class="btn-primary" id="next-btn" onclick="nextQuestion()" style="margin-top:1rem;"></button>
     </div>
   </div>
 
@@ -76,39 +80,7 @@ h1 { font-size: 22px; font-weight: 500; color: #111; margin-bottom: 1rem; }
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9e2Vqu8ByfppkR2HHXNiyXqm72fY-mDXlGFKlVuhcWC4DQA16K7GCV330z6KnF4gVFQ/exec";
 
-const questions = [
-  {
-    q: "AIエージェントの基本的な動作サイクルとして正しいものはどれですか？",
-    choices: ["入力 → 処理 → 出力", "Think（考える）→ Act（行動する）→ Observe（観察する）", "計画 → 実行 → 報告"],
-    correct: 1,
-    exp: "AIエージェントは「考える・行動する・観察する」のループを繰り返しながら目標を達成します。"
-  },
-  {
-    q: "AIエージェントに「ツール」を持たせる目的として最も適切なものはどれですか？",
-    choices: ["見た目をよくするため", "ウェブ検索やファイル操作など、外部の情報や機能を使えるようにするため", "AIの回答を短くするため"],
-    correct: 1,
-    exp: "ツールを持たせることで、AIは自分の知識だけでなく、検索・計算・ファイル操作など外部の能力を使えるようになります。"
-  },
-  {
-    q: "claude.aiのProjectsの「インストラクション」フィールドに書くものとして正しいのはどれですか？",
-    choices: ["毎回の会話で変わる内容", "AIに毎回読み込ませる固定の役割・ルール・背景情報", "過去の会話の履歴"],
-    correct: 1,
-    exp: "インストラクションはセッションをまたいで毎回読み込まれる固定の指示文書です。"
-  },
-  {
-    q: "Claude Codeを使う際にセキュリティ対策が必要な理由として正しいものはどれですか？",
-    choices: ["インターネットが遅くなるから", "PCの中のファイルを直接読み書き・削除できるため、悪意ある指示が混入するリスクがあるから", "メモリをたくさん使うから"],
-    correct: 1,
-    exp: "Claude Codeはチャット画面と違い、PC内部のファイル操作が可能です。"
-  },
-  {
-    q: "AIエージェントに「コンテキスト（文脈）」を渡すことが重要な理由はどれですか？",
-    choices: ["AIは毎回リセットされ、前の会話を覚えていないため", "AIは記憶力が高すぎて忘れないようにするため", "コンテキストがないとAIが遅くなるため"],
-    correct: 0,
-    exp: "AIはセッションをまたいで記憶を保持しません。そのため必要な背景情報はその都度渡す必要があります。"
-  }
-];
-
+let questions = [];
 let current = 0;
 let score = 0;
 let answered = false;
@@ -117,7 +89,24 @@ let results = [];
 function goToQuiz() {
   current = 0; score = 0; results = [];
   showScreen("screen-quiz");
-  renderQuestion();
+  loadQuestions();
+}
+
+function loadQuestions() {
+  document.getElementById("loading-area").style.display = "block";
+  document.getElementById("quiz-content").style.display = "none";
+
+  fetch(SCRIPT_URL + "?action=getQuestions")
+    .then(res => res.json())
+    .then(data => {
+      questions = data;
+      document.getElementById("loading-area").style.display = "none";
+      document.getElementById("quiz-content").style.display = "block";
+      renderQuestion();
+    })
+    .catch(() => {
+      document.getElementById("loading-area").textContent = "問題の読み込みに失敗しました。再度お試しください。";
+    });
 }
 
 function showScreen(id) {
@@ -209,9 +198,5 @@ function sendNotification() {
       btn.textContent = "通知しました";
       status.textContent = "担当者に通知が届きました。しばらくお待ちください。";
     });
-}
-
-function resetAll() {
-  showScreen("screen-video");
 }
 </script>
